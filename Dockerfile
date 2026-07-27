@@ -9,7 +9,6 @@ FROM nginx:alpine
 # no deben quedar publicados: por eso la lista es explícita en vez de "COPY . .".
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY index.html /usr/share/nginx/html/
-COPY assets/ /usr/share/nginx/html/assets/
 
 EXPOSE 80
 
