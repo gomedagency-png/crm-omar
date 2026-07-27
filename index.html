@@ -1,0 +1,1224 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Turnos — Dr. Omar Cano</title>
+
+<style>
+/* reset mínimo */
+*,*::before,*::after{ box-sizing:border-box; }
+html{ -webkit-text-size-adjust:100%; }
+body,h1,h2,h3,p,ol,ul,figure{ margin:0; }
+ol,ul{ padding:0; list-style:none; }
+img,svg{ display:block; max-width:100%; }
+button,input,select,textarea{ font:inherit; color:inherit; }
+
+:root{
+  --paper:#f4f3ec; --paper-raised:#ffffff; --paper-sunken:#eceade;
+  --ink:#23261c; --ink-muted:#565b4a; --ink-faint:#7d8270;
+  --olive:#565b3f; --olive-deep:#3a3d29;
+  --line:rgba(35,38,28,.14); --line-strong:rgba(35,38,28,.30);
+  --brass:#9c7a2e; --brass-ink:#ffffff; --good:#4a7a52;
+  --alert:#9a3b1f; --alert-bg:rgba(154,59,31,.09); --alert-line:rgba(154,59,31,.32);
+  --sede-res:#2b6f3a; --sede-cor:#a5762a;
+  --grid:rgba(35,38,28,.10);
+  --shadow:0 1px 2px rgba(35,38,28,.06), 0 8px 24px -12px rgba(35,38,28,.18);
+  --radius:14px; --radius-sm:9px;
+  --f-display: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "URW Palladio L", serif;
+  --f-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --f-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#1c1e15; --paper-raised:#262a1c; --paper-sunken:#171911;
+    --ink:#eeece0; --ink-muted:#b7b7a3; --ink-faint:#8d8f7c;
+    --olive:#7c8259; --olive-deep:#2c2f20;
+    --line:rgba(238,236,224,.14); --line-strong:rgba(238,236,224,.30);
+    --brass:#c9a24e; --brass-ink:#211a08; --good:#7cbf85;
+    --alert:#e09b7a; --alert-bg:rgba(224,155,122,.12); --alert-line:rgba(224,155,122,.34);
+    --sede-res:#2b7a42; --sede-cor:#b98a38;
+    --grid:rgba(238,236,224,.11);
+    --shadow:0 1px 2px rgba(0,0,0,.34), 0 8px 24px -12px rgba(0,0,0,.55);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#1c1e15; --paper-raised:#262a1c; --paper-sunken:#171911;
+  --ink:#eeece0; --ink-muted:#b7b7a3; --ink-faint:#8d8f7c;
+  --olive:#7c8259; --olive-deep:#2c2f20;
+  --line:rgba(238,236,224,.14); --line-strong:rgba(238,236,224,.30);
+  --brass:#c9a24e; --brass-ink:#211a08; --good:#7cbf85;
+  --alert:#e09b7a; --alert-bg:rgba(224,155,122,.12); --alert-line:rgba(224,155,122,.34);
+  --sede-res:#2b7a42; --sede-cor:#b98a38;
+  --grid:rgba(238,236,224,.11);
+  --shadow:0 1px 2px rgba(0,0,0,.34), 0 8px 24px -12px rgba(0,0,0,.55);
+}
+
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:var(--f-body); font-size:15px; line-height:1.5;
+  -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+:focus-visible{ outline:2px solid var(--brass); outline-offset:2px; border-radius:4px; }
+@media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
+
+.wrap{ max-width:1180px; margin:0 auto; padding:0 20px 72px; }
+
+.topbar{ position:sticky; top:0; z-index:20; background:var(--paper); border-bottom:1px solid var(--line); }
+.topbar-in{ max-width:1180px; margin:0 auto; padding:16px 20px 0; }
+.brandrow{ display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+.eyebrow{ font-family:var(--f-mono); font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--brass); margin-bottom:2px; }
+h1{ font-family:var(--f-display); font-size:25px; font-weight:600; letter-spacing:-.01em; }
+.sub{ font-size:13px; color:var(--ink-muted); margin-top:2px; }
+
+.status{ display:flex; align-items:center; gap:9px; font-size:12.5px; color:var(--ink-muted); }
+.dot{ width:7px; height:7px; border-radius:50%; background:var(--good); flex:none; }
+.dot.warn{ background:var(--alert); }
+.dot.idle{ background:var(--ink-faint); }
+.dot.pulse{ animation:lat 1.4s ease-in-out infinite; }
+@keyframes lat{ 0%,100%{opacity:1} 50%{opacity:.35} }
+.linkbtn{ font-size:12.5px; background:none; border:none; padding:2px 4px; color:var(--ink-muted);
+  text-decoration:underline; text-underline-offset:3px; text-decoration-color:var(--line-strong); cursor:pointer; }
+.linkbtn:hover{ color:var(--ink); }
+.linkbtn[disabled]{ opacity:.5; cursor:default; text-decoration:none; }
+
+.tabs{ display:flex; gap:2px; margin-top:16px; overflow-x:auto; scrollbar-width:none; }
+.tabs::-webkit-scrollbar{ display:none; }
+.tab{ font-size:13.5px; background:none; border:none; cursor:pointer; white-space:nowrap;
+  padding:9px 13px 11px; color:var(--ink-muted); border-bottom:2px solid transparent; margin-bottom:-1px;
+  display:flex; align-items:center; gap:7px; }
+.tab:hover{ color:var(--ink); }
+.tab[aria-selected="true"]{ color:var(--ink); border-bottom-color:var(--brass); font-weight:600; }
+.tab .count{ font-family:var(--f-mono); font-size:10.5px; padding:1px 5px; border-radius:20px;
+  background:var(--alert-bg); color:var(--alert); border:1px solid var(--alert-line); }
+
+.toolbar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:18px 0 4px; }
+.nav{ display:flex; align-items:center; gap:4px; }
+.iconbtn{ width:32px; height:32px; display:grid; place-items:center; cursor:pointer;
+  background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius-sm); color:var(--ink); line-height:1; }
+.iconbtn:hover{ border-color:var(--line-strong); }
+.period{ font-family:var(--f-display); font-size:18px; font-weight:600; margin:0 6px; min-width:min(240px,52vw); }
+.btn{ font-size:13px; padding:7px 13px; cursor:pointer; border-radius:var(--radius-sm);
+  background:var(--paper-raised); border:1px solid var(--line); color:var(--ink); }
+.btn:hover{ border-color:var(--line-strong); }
+.btn.primary{ background:var(--brass); border-color:var(--brass); color:var(--brass-ink); font-weight:600; }
+.spacer{ flex:1 1 auto; }
+.search{ font-size:13.5px; padding:8px 12px; min-width:min(280px,100%);
+  background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius-sm); color:var(--ink); }
+.search::placeholder{ color:var(--ink-faint); }
+.chips{ display:flex; gap:6px; }
+.chip{ font-size:12.5px; padding:6px 11px; cursor:pointer; border-radius:20px;
+  background:transparent; border:1px solid var(--line); color:var(--ink-muted); display:flex; align-items:center; gap:6px; }
+.chip:hover{ border-color:var(--line-strong); color:var(--ink); }
+.chip[aria-pressed="true"]{ border-color:var(--line-strong); color:var(--ink); background:var(--paper-raised); font-weight:600; }
+.swatch{ width:9px; height:9px; border-radius:3px; flex:none; }
+
+.card{ background:var(--paper-raised); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); }
+.grid-jornadas{ display:grid; grid-template-columns:repeat(auto-fill, minmax(300px,1fr)); gap:16px; margin-top:18px; }
+.jornada{ overflow:hidden; display:flex; flex-direction:column; }
+.jornada-hd{ padding:14px 16px 13px 18px; border-bottom:1px solid var(--line); position:relative;
+  display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.jornada-hd::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--stripe,var(--line-strong)); }
+.jornada-sede{ font-family:var(--f-mono); font-size:10.5px; letter-spacing:.13em; text-transform:uppercase;
+  color:var(--ink-muted); display:flex; align-items:center; gap:7px; margin-bottom:5px; }
+.jornada-fecha{ font-family:var(--f-display); font-size:16.5px; font-weight:600; text-transform:capitalize; }
+.jornada-n{ font-family:var(--f-mono); font-size:12px; color:var(--ink-muted); white-space:nowrap;
+  font-variant-numeric:tabular-nums; padding-top:2px; }
+.jornada-bd{ padding:4px 0; }
+.slot{ padding:12px 16px 14px 18px; border-bottom:1px dashed var(--line); }
+.slot:last-child{ border-bottom:none; }
+.slot-hd{ display:flex; align-items:baseline; gap:10px; margin-bottom:9px; }
+.slot-hora{ font-family:var(--f-mono); font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; }
+.slot-n{ font-size:12px; color:var(--ink-faint); }
+.pacientes{ display:flex; flex-direction:column; gap:9px; }
+.pac{ display:flex; gap:9px; align-items:flex-start; font-size:13.5px; }
+.pac-i{ font-family:var(--f-mono); font-size:10.5px; color:var(--ink-faint); padding-top:3px; min-width:14px; font-variant-numeric:tabular-nums; }
+.pac-nombre{ font-weight:600; }
+.pac-nombre.vacio{ font-weight:400; color:var(--ink-faint); font-style:italic; }
+.pac-nombre.crudo{ font-weight:400; color:var(--ink-muted); font-style:normal;
+  border-left:2px solid var(--line-strong); padding-left:8px; display:block; font-size:12.5px; }
+.pac-meta{ font-size:12.5px; color:var(--ink-muted); }
+.pac-tel{ font-family:var(--f-mono); font-size:11.5px; color:var(--ink-faint); }
+.vacia{ padding:22px 18px; color:var(--ink-faint); font-size:13.5px; font-style:italic; }
+
+.tablewrap{ overflow-x:auto; margin-top:18px; border:1px solid var(--line); border-radius:var(--radius);
+  background:var(--paper-raised); box-shadow:var(--shadow); }
+table{ border-collapse:collapse; width:100%; min-width:640px; font-size:13.5px; }
+th{ text-align:left; font-family:var(--f-mono); font-size:10.5px; letter-spacing:.11em; text-transform:uppercase;
+  color:var(--ink-muted); font-weight:500; padding:12px 14px; border-bottom:1px solid var(--line); white-space:nowrap; }
+td{ padding:11px 14px; border-bottom:1px solid var(--line); vertical-align:top; }
+tbody tr:last-child td{ border-bottom:none; }
+tbody tr:hover{ background:var(--paper-sunken); }
+.num{ font-family:var(--f-mono); font-variant-numeric:tabular-nums; white-space:nowrap; }
+.sede-tag{ display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
+
+.banners{ display:flex; flex-direction:column; gap:10px; margin-top:18px; }
+.banner{ border:1px solid var(--alert-line); background:var(--alert-bg); border-radius:var(--radius);
+  padding:14px 16px; display:flex; gap:12px; align-items:flex-start; }
+.banner .ico{ font-size:15px; line-height:1.3; flex:none; }
+.banner h3{ font-size:14px; font-weight:600; font-family:var(--f-body); margin-bottom:3px; }
+.banner p{ font-size:13px; color:var(--ink-muted); }
+.banner p + p{ margin-top:6px; }
+.banner .fix{ margin-top:9px; }
+.banner.neutral{ border-color:var(--line); background:var(--paper-raised); }
+.banner code{ font-family:var(--f-mono); font-size:12px; background:var(--paper-sunken);
+  padding:1px 5px; border-radius:4px; border:1px solid var(--line); }
+.muestra{ font-family:var(--f-mono); font-size:11.5px; color:var(--ink-muted); background:var(--paper-sunken);
+  border:1px solid var(--line); border-radius:var(--radius-sm); padding:8px 10px; margin-top:9px;
+  overflow-x:auto; white-space:pre; }
+
+.rev{ display:flex; flex-direction:column; gap:12px; margin-top:18px; }
+.rev-item{ padding:15px 17px; display:flex; gap:14px; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; }
+.rev-when{ font-family:var(--f-mono); font-size:13px; font-variant-numeric:tabular-nums; }
+.rev-motivos{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.motivo{ font-size:11.5px; padding:3px 9px; border-radius:20px; border:1px solid var(--alert-line);
+  color:var(--alert); background:var(--alert-bg); display:inline-flex; align-items:center; gap:5px; }
+a.golink{ font-size:12.5px; color:var(--ink-muted); text-decoration:underline; text-underline-offset:3px;
+  text-decoration-color:var(--line-strong); white-space:nowrap; }
+a.golink:hover{ color:var(--ink); }
+
+.tiles{ display:grid; grid-template-columns:repeat(auto-fit, minmax(170px,1fr)); gap:14px; margin-top:18px; }
+.tile{ padding:16px 18px 18px; }
+.tile-lbl{ font-family:var(--f-mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-muted); }
+.tile-val{ font-family:var(--f-display); font-size:34px; font-weight:600; line-height:1.1; margin-top:8px; font-variant-numeric:tabular-nums; }
+.tile-note{ font-size:12.5px; color:var(--ink-faint); margin-top:4px; }
+
+.chartcard{ margin-top:16px; padding:18px 20px 20px; }
+.chart-hd{ display:flex; justify-content:space-between; align-items:baseline; gap:16px; flex-wrap:wrap; margin-bottom:4px; }
+.chart-title{ font-family:var(--f-display); font-size:17px; font-weight:600; }
+.legend{ display:flex; gap:14px; font-size:12.5px; color:var(--ink-muted); }
+.legend span{ display:inline-flex; align-items:center; gap:6px; }
+.plot{ display:flex; align-items:flex-end; gap:14px; height:190px; margin-top:20px; padding-top:8px; position:relative; }
+.gridline{ position:absolute; left:0; right:0; border-top:1px solid var(--grid); }
+.gridline span{ position:absolute; left:0; top:-8px; font-family:var(--f-mono); font-size:10px;
+  color:var(--ink-faint); background:var(--paper-raised); padding-right:6px; }
+.wk{ flex:1 1 0; display:flex; flex-direction:column; justify-content:flex-end; height:100%; min-width:0; }
+.bars{ display:flex; align-items:flex-end; gap:2px; height:100%; justify-content:center; }
+.bar{ flex:1 1 0; max-width:26px; border-radius:4px 4px 0 0; min-height:2px; cursor:default; }
+.bar.res{ background:var(--sede-res); }
+.bar.cor{ background:var(--sede-cor); }
+.bar.zero{ background:var(--grid); }
+.wk-lbl{ text-align:center; font-family:var(--f-mono); font-size:10.5px; color:var(--ink-muted);
+  padding-top:9px; border-top:1px solid var(--line-strong); }
+.wk-tot{ text-align:center; font-family:var(--f-mono); font-size:11.5px; color:var(--ink);
+  padding-bottom:6px; font-variant-numeric:tabular-nums; }
+#tip{ position:fixed; z-index:60; pointer-events:none; opacity:0; transition:opacity .1s;
+  background:var(--paper-raised); border:1px solid var(--line-strong); border-radius:var(--radius-sm);
+  box-shadow:var(--shadow); padding:8px 11px; font-size:12.5px; white-space:nowrap; }
+
+.foot{ margin-top:34px; padding-top:18px; border-top:1px solid var(--line); font-size:12px;
+  color:var(--ink-faint); display:flex; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+
+.center-pane{ max-width:600px; margin:70px auto; padding:26px 28px 30px; }
+.center-pane h2{ font-family:var(--f-display); font-size:22px; margin-bottom:10px; }
+.center-pane p{ color:var(--ink-muted); font-size:14px; margin-bottom:12px; }
+.center-pane ol{ color:var(--ink-muted); font-size:14px; padding-left:20px; list-style:decimal; }
+.center-pane li{ margin-bottom:6px; }
+.center-pane code{ font-family:var(--f-mono); font-size:12.5px; background:var(--paper-sunken);
+  padding:1px 5px; border-radius:4px; border:1px solid var(--line); }
+
+@media (max-width:560px){
+  h1{ font-size:21px; }
+  .period{ font-size:16px; }
+  .tile-val{ font-size:28px; }
+  .wrap{ padding:0 14px 60px; }
+  .topbar-in{ padding:14px 14px 0; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-in">
+    <div class="brandrow">
+      <div>
+        <p class="eyebrow">GoMedic · CRM de turnos</p>
+        <h1>Dr. Omar Cano</h1>
+        <p class="sub">Oftalmología · Resistencia y Corrientes</p>
+      </div>
+      <div class="status" id="status" aria-live="polite"></div>
+    </div>
+    <div class="tabs" role="tablist" id="tabs"></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div id="banners" class="banners"></div>
+  <div class="toolbar" id="toolbar"></div>
+  <div id="view"></div>
+  <div class="foot">
+    <span id="rango">Lectura del calendario del consultorio. Esta vista no modifica turnos.</span>
+    <span>Horarios en hora de Argentina.</span>
+  </div>
+</div>
+
+<div id="tip" role="tooltip"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ============================ configuración ============================ */
+
+  var WEBHOOK_RUTA = "/webhook/493256e6-2ef9-41c0-b160-2df5f3d26e57";
+  var WEBHOOK_ABSOLUTO = "https://gomedic-prueba-gomedic-n8n.6afcq3.easypanel.host" + WEBHOOK_RUTA;
+
+  // Servido desde el mismo dominio que n8n se usa la ruta relativa: mismo
+  // origen, así que no hace falta CORS (el webhook no manda ningún header de
+  // Access-Control, verificado). Abierto como archivo suelto para probar, cae
+  // a la URL absoluta — ahí sí haría falta CORS.
+  var WEBHOOK_URL = (location.protocol === "http:" || location.protocol === "https:")
+    ? WEBHOOK_RUTA
+    : WEBHOOK_ABSOLUTO;
+
+  var REFRESCO_MS = 60000;
+  var TIMEOUT_MS = 20000;
+
+  /* ============================ constantes ============================ */
+
+  var TZ = "America/Argentina/Buenos_Aires";
+
+  var SEDES = {
+    resistencia: { id: "resistencia", nombre: "Resistencia", dows: [2, 4], desde: 600, hasta: 690, horario: "martes y jueves, 10:30", cssvar: "--sede-res", cls: "res" },
+    corrientes:  { id: "corrientes",  nombre: "Corrientes",  dows: [5],    desde: 1020, hasta: 1200, horario: "viernes, 17:30 a 19:30", cssvar: "--sede-cor", cls: "cor" }
+  };
+  var DIAS_CLINICA = [2, 4, 5]; // martes, jueves, viernes
+
+  // Nombres que el consultorio usa como marcador de "todavía sin cargar".
+  // No son un error: se muestran tal cual, en gris.
+  var PLACEHOLDERS = ["pendiente", "no informado", "no informa", "sin nombre", "s/d", "sd", "-", "--", "x"];
+
+  /* ============================ fechas ============================ */
+
+  var partesFmt = new Intl.DateTimeFormat("en-CA", {
+    timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hourCycle: "h23"
+  });
+
+  function partesEnArgentina(fecha) {
+    var o = {}, ps = partesFmt.formatToParts(fecha), i;
+    for (i = 0; i < ps.length; i++) if (ps[i].type !== "literal") o[ps[i].type] = ps[i].value;
+    var y = +o.year, m = +o.month, d = +o.day, hh = +o.hour % 24, mm = +o.minute;
+    return {
+      clave: o.year + "-" + o.month + "-" + o.day,
+      dow: new Date(Date.UTC(y, m - 1, d)).getUTCDay(),
+      minutos: hh * 60 + mm,
+      hora: String(hh).padStart(2, "0") + ":" + String(mm).padStart(2, "0")
+    };
+  }
+
+  function claveAUtc(k) { var p = k.split("-"); return Date.UTC(+p[0], +p[1] - 1, +p[2]); }
+  function utcAClave(t) {
+    var d = new Date(t);
+    return d.getUTCFullYear() + "-" + String(d.getUTCMonth() + 1).padStart(2, "0") + "-" + String(d.getUTCDate()).padStart(2, "0");
+  }
+  function masDias(k, n) { return utcAClave(claveAUtc(k) + n * 86400000); }
+  function dowDe(k) { return new Date(claveAUtc(k)).getUTCDay(); }
+  function lunesDe(k) { var d = dowDe(k); return masDias(k, d === 0 ? -6 : 1 - d); }
+  function hoyClave() { return partesEnArgentina(new Date()).clave; }
+  function mesDe(k) { return k.slice(0, 7); }
+  function masMeses(mk, n) {
+    var p = mk.split("-"), y = +p[0], m = +p[1] + n;
+    while (m > 12) { m -= 12; y++; }
+    while (m < 1) { m += 12; y--; }
+    return y + "-" + String(m).padStart(2, "0");
+  }
+  // Argentina no aplica horario de verano: el offset es -03:00 todo el año.
+  function limiteIso(mk) { return mk + "-01T00:00:00-03:00"; }
+
+  var fmtDiaLargo  = new Intl.DateTimeFormat("es-AR", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
+  var fmtDiaCorto  = new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "short", timeZone: "UTC" });
+  var fmtDiaTabla  = new Intl.DateTimeFormat("es-AR", { weekday: "short", day: "2-digit", month: "2-digit", timeZone: "UTC" });
+  var fmtMes       = new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric", timeZone: "UTC" });
+
+  function txtDiaLargo(k) { return fmtDiaLargo.format(new Date(claveAUtc(k))); }
+  function txtDiaCorto(k) { return fmtDiaCorto.format(new Date(claveAUtc(k))).replace(".", ""); }
+  function txtDiaTabla(k) { return fmtDiaTabla.format(new Date(claveAUtc(k))); }
+  function txtMes(mk) { return fmtMes.format(new Date(claveAUtc(mk + "-01"))); }
+
+  function hace(ts) {
+    var s = Math.round((Date.now() - ts) / 1000);
+    if (s < 90) return "recién";
+    var m = Math.round(s / 60);
+    if (m < 60) return "hace " + m + " min";
+    var h = Math.round(m / 60);
+    if (h < 24) return "hace " + h + " h";
+    return "hace " + Math.round(h / 24) + " d";
+  }
+
+  /* ============================ turnos ============================ */
+
+  function sedeDe(dow, minutos) {
+    for (var k in SEDES) {
+      var s = SEDES[k];
+      if (s.dows.indexOf(dow) !== -1 && minutos >= s.desde && minutos <= s.hasta) return s.id;
+    }
+    return null;
+  }
+
+  function capturar(re, texto) { var m = texto.match(re); return m && m[1] ? m[1].trim() : null; }
+
+  function claveTelefono(bruto) {
+    if (!bruto) return null;
+    var d = bruto.replace(/\D/g, "");
+    if (d.length < 8) return null;
+    return d.slice(-10);
+  }
+
+  function esPlaceholder(nombre) {
+    if (!nombre) return true;
+    return PLACEHOLDERS.indexOf(nombre.toLowerCase().replace(/[.\s]+$/, "")) !== -1;
+  }
+
+  function aTurno(ev) {
+    if (!ev || ev.status === "cancelled") return null;
+    var inicio = ev.start || {};
+    var desc = (ev.description || "").trim();
+    var titulo = (ev.summary || "").trim();
+
+    var nombre  = capturar(/Turno para\s*:?\s*([^.\n]+)/i, desc);
+    // Sin "." en la clase: la descripción termina en punto y si no se excluye
+    // el teléfono queda capturado como "+5493794277839.".
+    var tel     = capturar(/Tel[eé]fono\s*:\s*([+\d][\d\s\-()]*)/i, desc);
+    var estudio = capturar(/Estudio\s*:\s*([^.\n]+)/i, desc) || titulo || null;
+
+    var t = {
+      // El webhook puede no traer id; se arma uno estable con lo que sí viene.
+      id: ev.id || [inicio.dateTime || inicio.date || "", titulo, desc.slice(0, 40)].join("|"),
+      nombre: nombre,
+      sinNombre: esPlaceholder(nombre),
+      estudio: estudio,
+      tel: tel,
+      telKey: claveTelefono(tel),
+      link: ev.htmlLink || null,
+      tzBruto: inicio.timeZone || null,
+      descripcionCruda: desc || null,
+      // Hay descripción pero el formato esperado no matcheó: no se descarta,
+      // se muestra el texto completo tal cual vino.
+      parseoFallido: !!desc && !nombre && !tel,
+      motivos: []
+    };
+
+    if (!inicio.dateTime) {
+      // Evento de día completo: no es un turno con horario.
+      t.clave = inicio.date || null;
+      t.minutos = null;
+      t.hora = "todo el día";
+      t.instante = t.clave ? claveAUtc(t.clave) : 0;
+      t.sede = null;
+      t.motivos.push("Sin horario — quedó como evento de día completo");
+      t.revisar = true;
+      return t.clave ? t : null;
+    }
+
+    var fecha = new Date(inicio.dateTime);
+    if (isNaN(fecha.getTime())) return null;
+    var p = partesEnArgentina(fecha);
+
+    t.instante = fecha.getTime();
+    t.clave = p.clave;
+    t.dow = p.dow;
+    t.minutos = p.minutos;
+    t.hora = p.hora;
+    t.sede = sedeDe(p.dow, p.minutos);
+
+    if (t.sede === null) t.motivos.push("Fuera de los días y horarios de atención");
+    // El horario que se muestra siempre es el instante real convertido a hora de
+    // Argentina; esto marca que el evento quedó declarado en otra zona horaria.
+    if (t.tzBruto && t.tzBruto !== TZ) t.motivos.push("Zona horaria mal declarada: " + t.tzBruto);
+    t.revisar = t.motivos.length > 0;
+    return t;
+  }
+
+  /* ============================ normalizador ============================ */
+
+  // n8n puede devolver los items de varias formas según cómo esté armado el
+  // flujo. En vez de asumir una, se aceptan todas las razonables y cualquier
+  // otra cosa produce un error explicable en pantalla.
+  function normalizarRespuesta(datos) {
+    if (datos === null || datos === undefined) return { error: "vacio" };
+
+    // Caso conocido: el nodo Webhook quedó en "Respond: Immediately".
+    if (!Array.isArray(datos) && typeof datos === "object" &&
+        typeof datos.message === "string" && /workflow was started/i.test(datos.message)) {
+      return { error: "n8n_inmediato" };
+    }
+
+    var arr = null, unicoSuelto = false;
+    if (Array.isArray(datos)) {
+      arr = datos;
+    } else if (typeof datos === "object") {
+      var claves = ["events", "data", "items", "results", "turnos", "value"];
+      for (var i = 0; i < claves.length; i++) {
+        if (Array.isArray(datos[claves[i]])) { arr = datos[claves[i]]; break; }
+      }
+      // Un único evento suelto, sin envolver en array. Se acepta, pero se marca:
+      // casi siempre significa que n8n está devolviendo solo el primer item.
+      if (!arr && datos.start && (datos.start.dateTime || datos.start.date)) { arr = [datos]; unicoSuelto = true; }
+      if (!arr && datos.json && datos.json.start) { arr = [datos.json]; unicoSuelto = true; }
+    }
+
+    if (!arr) {
+      return { error: "forma", claves: (typeof datos === "object") ? Object.keys(datos) : [typeof datos] };
+    }
+
+    // Desenvolver el {json: {...}} de n8n cuando aparece.
+    var eventos = arr.map(function (x) {
+      return (x && typeof x === "object" && x.json && typeof x.json === "object") ? x.json : x;
+    }).filter(function (x) { return x && typeof x === "object"; });
+
+    if (!eventos.length) return { eventos: [] };
+
+    var conFecha = eventos.filter(function (e) { return e.start && (e.start.dateTime || e.start.date); });
+    if (!conFecha.length) {
+      return { error: "sinfecha", claves: Object.keys(eventos[0]) };
+    }
+    return { eventos: conFecha, descartados: eventos.length - conFecha.length, unicoSuelto: unicoSuelto };
+  }
+
+  /* ============================ estado ============================ */
+
+  var store = {
+    estado: "inicial",   // inicial | cargando | ok | vacio | error | desactualizado
+    turnos: [],
+    error: null,
+    traidoEn: null,
+    cargando: false,
+    descartados: 0,
+    unicoSuelto: false
+  };
+
+  var estado = { vista: "agenda", ancla: hoyClave(), q: "", filtroSede: "todas" };
+
+  function traer() {
+    if (store.cargando) return;
+    store.cargando = true;
+    if (!store.traidoEn) store.estado = "cargando";
+    pintar();
+
+    var opciones = { method: "GET", headers: { "Accept": "application/json" }, cache: "no-store" };
+    try {
+      if (typeof AbortSignal !== "undefined" && AbortSignal.timeout) opciones.signal = AbortSignal.timeout(TIMEOUT_MS);
+    } catch (_) { /* navegador viejo: sigue sin timeout */ }
+
+    fetch(WEBHOOK_URL, opciones)
+      .then(function (res) {
+        if (!res.ok) { var e = new Error("http"); e.tipo = "http"; e.status = res.status; throw e; }
+        return res.text();
+      })
+      .then(function (txt) {
+        var datos;
+        try { datos = JSON.parse(txt); }
+        catch (_) {
+          var e = new Error("json"); e.tipo = "json";
+          e.muestra = txt.slice(0, 200) || "(respuesta vacía)";
+          throw e;
+        }
+        var norm = normalizarRespuesta(datos);
+        if (norm.error) {
+          var e2 = new Error(norm.error); e2.tipo = norm.error; e2.claves = norm.claves; throw e2;
+        }
+
+        var vistos = Object.create(null), turnos = [];
+        norm.eventos.forEach(function (ev) {
+          var t = aTurno(ev);
+          if (!t || vistos[t.id]) return;
+          vistos[t.id] = 1;
+          turnos.push(t);
+        });
+        turnos.sort(function (a, b) { return a.instante - b.instante; });
+
+        store.turnos = turnos;
+        store.descartados = norm.descartados || 0;
+        store.unicoSuelto = !!norm.unicoSuelto;
+        store.error = null;
+        store.traidoEn = Date.now();
+        store.estado = turnos.length ? "ok" : "vacio";
+      })
+      .catch(function (err) {
+        var tipo = err && err.tipo;
+        if (!tipo) tipo = (err && (err.name === "TimeoutError" || err.name === "AbortError")) ? "timeout" : "red";
+        store.error = { tipo: tipo, status: err && err.status, muestra: err && err.muestra, claves: err && err.claves };
+        // Un fallo nunca borra lo que ya se estaba mostrando.
+        store.estado = store.traidoEn ? "desactualizado" : "error";
+      })
+      .then(function () { store.cargando = false; pintar(); });
+  }
+
+  function todosLosTurnos() { return store.turnos; }
+
+  function turnosEntre(desde, hasta) {
+    return store.turnos.filter(function (t) { return t.clave >= desde && t.clave <= hasta; });
+  }
+
+  function rangoDatos() {
+    if (!store.turnos.length) return null;
+    return { desde: store.turnos[0].clave, hasta: store.turnos[store.turnos.length - 1].clave };
+  }
+
+  function rangoActual() {
+    if (estado.vista === "agenda") {
+      var l = lunesDe(estado.ancla);
+      return { desde: l, hasta: masDias(l, 6), tipo: "semana" };
+    }
+    var mk = mesDe(estado.ancla);
+    return { desde: mk + "-01", hasta: masDias(masMeses(mk, 1) + "-01", -1), tipo: "mes" };
+  }
+
+  // Distingue "no hay turnos" de "no me mandaron datos de esta fecha".
+  function avisoFueraDeRango(r) {
+    var rd = rangoDatos();
+    if (!rd) return null;
+    if (r.hasta < rd.desde || r.desde > rd.hasta) {
+      return "El webhook trajo turnos del " + txtDiaCorto(rd.desde) + " al " + txtDiaCorto(rd.hasta) +
+        ". Esta " + (r.tipo === "semana" ? "semana" : "fecha") + " está fuera de eso.";
+    }
+    return null;
+  }
+
+  /* ============================ utilidades de render ============================ */
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  function puntoSede(sedeId) {
+    if (!sedeId) return '<span class="swatch" style="background:var(--alert)"></span>';
+    return '<span class="swatch" style="background:var(' + SEDES[sedeId].cssvar + ')"></span>';
+  }
+
+  function nombreSede(sedeId) { return sedeId ? SEDES[sedeId].nombre : "Fuera de horario"; }
+
+  function nombreVisible(t) {
+    // Si el formato de la descripción no se pudo interpretar, se muestra
+    // completa en vez de perderla.
+    if (t.parseoFallido) return '<span class="pac-nombre crudo">' + esc(t.descripcionCruda) + "</span>";
+    if (!t.nombre) return '<span class="pac-nombre vacio">Sin nombre</span>';
+    if (t.sinNombre) return '<span class="pac-nombre vacio">' + esc(t.nombre) + "</span>";
+    return '<span class="pac-nombre">' + esc(t.nombre) + "</span>";
+  }
+
+  function coincide(t, q) {
+    if (!q) return true;
+    var soloDigitos = q.replace(/\D/g, "");
+    var heno = ((t.nombre || "") + " " + (t.estudio || "") + " " + (t.tel || "") + " " + (t.descripcionCruda || "")).toLowerCase();
+    if (heno.indexOf(q.toLowerCase()) !== -1) return true;
+    if (soloDigitos.length >= 3 && (t.tel || "").replace(/\D/g, "").indexOf(soloDigitos) !== -1) return true;
+    return false;
+  }
+
+  /* ============================ errores ============================ */
+
+  function explicar(err) {
+    var s = err.status;
+    switch (err.tipo) {
+      case "n8n_inmediato":
+        return {
+          t: "El webhook arrancó el flujo pero no devolvió los turnos",
+          d: 'Respondió <code>{"message":"Workflow was started"}</code>. En n8n, el nodo Webhook está en <code>Respond: Immediately</code>.',
+          d2: 'Cambialo a <code>Using \'Respond to Webhook\' node</code> y agregá un nodo <code>Respond to Webhook</code> al final del flujo, después del nodo de Google Calendar.',
+          reint: true
+        };
+      case "http":
+        if (s === 404) return {
+          t: "El webhook no existe (404)",
+          d: "O la URL cambió, o el workflow de n8n está desactivado. Si estás usando la URL de prueba, acordate de que deja de responder al rato: para uso real hace falta la URL de producción con el workflow activo.",
+          reint: true
+        };
+        if (s === 401 || s === 403) return {
+          t: "El webhook rechazó la consulta (" + s + ")",
+          d: "El endpoint pide autenticación. Habría que sacarle la restricción o que el CRM mande la credencial.",
+          reint: false
+        };
+        if (s >= 500) return {
+          t: "n8n falló al procesar el flujo (" + s + ")",
+          d: "El webhook existe pero el workflow tiró error. Revisá la ejecución en n8n para ver qué nodo falló.",
+          reint: true
+        };
+        return { t: "El webhook respondió con error " + s, d: "No se pudieron leer los turnos.", reint: true };
+      case "timeout":
+        return {
+          t: "El webhook tardó demasiado",
+          d: "Pasaron más de " + Math.round(TIMEOUT_MS / 1000) + " segundos sin respuesta. Puede que el flujo de n8n esté trayendo demasiados eventos de una vez.",
+          reint: true
+        };
+      case "red":
+        return {
+          t: "No se pudo contactar al webhook",
+          d: "Hay dos causas posibles y el navegador no las distingue: o n8n no está respondiendo, o falta el header <code>Access-Control-Allow-Origin</code> en la respuesta.",
+          d2: "Si el CRM está en otro dominio que n8n, es casi seguro lo segundo. La consola del navegador (F12) lo aclara.",
+          reint: true
+        };
+      case "json":
+        return {
+          t: "El webhook no devolvió JSON válido",
+          d: "Esto es lo que llegó:",
+          muestra: err.muestra,
+          reint: true
+        };
+      case "vacio":
+        return { t: "El webhook respondió vacío", d: "No llegó ningún contenido que se pueda interpretar.", reint: true };
+      case "forma":
+        return {
+          t: "Respondió JSON, pero no encuentro los eventos",
+          d: "Busco un array de eventos, o un objeto con la clave <code>events</code>, <code>data</code>, <code>items</code> o <code>results</code>. Lo que llegó tiene: " +
+             (err.claves && err.claves.length ? "<code>" + err.claves.map(esc).join("</code>, <code>") + "</code>" : "ninguna clave"),
+          reint: true
+        };
+      case "sinfecha":
+        return {
+          t: "Llegaron items, pero ninguno tiene fecha",
+          d: "Cada evento necesita <code>start.dateTime</code> (o <code>start.date</code>). Los items que llegaron tienen: " +
+             (err.claves && err.claves.length ? "<code>" + err.claves.map(esc).join("</code>, <code>") + "</code>" : "ninguna clave"),
+          reint: true
+        };
+      default:
+        return { t: "No se pudieron leer los turnos", d: "Probá actualizar.", reint: true };
+    }
+  }
+
+  function bannerHtml(e, neutral) {
+    return '<div class="banner' + (neutral ? " neutral" : "") + '">' +
+      '<span class="ico" aria-hidden="true">' + (neutral ? "·" : "⚠") + "</span>" +
+      "<div><h3>" + esc(e.t) + "</h3>" +
+      "<p>" + e.d + "</p>" +
+      (e.d2 ? "<p>" + e.d2 + "</p>" : "") +
+      (e.muestra ? '<div class="muestra">' + esc(e.muestra) + "</div>" : "") +
+      (e.reint ? '<div class="fix"><button class="btn" data-act="refrescar">Reintentar</button></div>' : "") +
+      "</div></div>";
+  }
+
+  function pintarBanners() {
+    var cont = document.getElementById("banners");
+    var html = "";
+
+    // El webhook devolvió un objeto suelto en vez de una lista. Se muestra
+    // igual, pero hay que avisarlo fuerte: si no, parece que el consultorio
+    // tiene un solo turno.
+    if (store.unicoSuelto) {
+      html += bannerHtml({
+        t: "n8n está devolviendo un solo turno",
+        d: "La respuesta trae un único evento, no una lista. En el nodo <code>Respond to Webhook</code>, la opción <code>Respond With</code> está en <code>First Incoming Item</code>.",
+        d2: "Cambiala a <code>All Incoming Items</code> para que lleguen todos los turnos del calendario. Hasta entonces, esta agenda está incompleta.",
+        reint: true
+      });
+    }
+
+    // Solo se muestra como banner cuando ya hay datos en pantalla; si no hay
+    // nada, el error ocupa el cuerpo entero y repetirlo sería ruido.
+    if (store.error && store.turnos.length) {
+      var e = explicar(store.error);
+      e = Object.assign({}, e, { t: e.t + " — se sigue mostrando la última lectura" });
+      html += bannerHtml(e);
+    }
+    if (store.descartados > 0) {
+      html += bannerHtml({
+        t: store.descartados + (store.descartados === 1 ? " evento sin fecha se omitió" : " eventos sin fecha se omitieron"),
+        d: "Llegaron en la respuesta pero no tenían <code>start.dateTime</code>, así que no se pueden ubicar en la agenda.",
+        reint: false
+      }, true);
+    }
+    cont.innerHTML = html;
+  }
+
+  /* ============================ vistas ============================ */
+
+  var VISTAS = [
+    { id: "agenda",    label: "Agenda" },
+    { id: "lista",     label: "Lista" },
+    { id: "pacientes", label: "Pacientes" },
+    { id: "revisar",   label: "Revisar" },
+    { id: "metricas",  label: "Métricas" }
+  ];
+
+  function pintarTabs(nRevisar) {
+    document.getElementById("tabs").innerHTML = VISTAS.map(function (v) {
+      var badge = (v.id === "revisar" && nRevisar > 0) ? '<span class="count">' + nRevisar + "</span>" : "";
+      return '<button class="tab" role="tab" data-vista="' + v.id + '" aria-selected="' +
+        (estado.vista === v.id) + '">' + v.label + badge + "</button>";
+    }).join("");
+  }
+
+  function chip(val, label, sedeId) {
+    return '<button class="chip" data-sede="' + val + '" aria-pressed="' + (estado.filtroSede === val) + '">' +
+      (sedeId ? puntoSede(sedeId) : "") + label + "</button>";
+  }
+
+  function pintarToolbar() {
+    var r = rangoActual();
+    var etiqueta, unidad;
+    if (r.tipo === "semana") { etiqueta = txtDiaCorto(r.desde) + " – " + txtDiaCorto(r.hasta); unidad = "semana"; }
+    else { etiqueta = txtMes(mesDe(estado.ancla)); unidad = "mes"; }
+
+    var html = "";
+    if (estado.vista !== "pacientes") {
+      html += '<div class="nav">' +
+        '<button class="iconbtn" data-act="prev" aria-label="' + unidad + ' anterior">&#8592;</button>' +
+        '<button class="iconbtn" data-act="next" aria-label="' + unidad + ' siguiente">&#8594;</button>' +
+        "</div>" +
+        '<span class="period" style="text-transform:capitalize">' + esc(etiqueta) + "</span>" +
+        '<button class="btn" data-act="hoy">Hoy</button>';
+    } else {
+      html += '<span class="period">Todos los pacientes</span>';
+    }
+
+    html += '<span class="spacer"></span>';
+
+    if (estado.vista === "lista" || estado.vista === "pacientes") {
+      html += '<input class="search" id="q" type="search" placeholder="Buscar por nombre, teléfono o estudio" value="' + esc(estado.q) + '">';
+    }
+    if (estado.vista === "lista") {
+      html += '<div class="chips">' + chip("todas", "Todas", null) +
+        chip("resistencia", "Resistencia", "resistencia") +
+        chip("corrientes", "Corrientes", "corrientes") + "</div>";
+    }
+    document.getElementById("toolbar").innerHTML = html;
+  }
+
+  function avisoHtml(texto) {
+    return '<div class="banners">' + bannerHtml({ t: "Sin datos para este período", d: esc(texto), reint: false }, true) + "</div>";
+  }
+
+  /* --- agenda --- */
+
+  function vistaAgenda() {
+    var lunes = lunesDe(estado.ancla);
+    var dias = [], i;
+    for (i = 0; i < 7; i++) dias.push(masDias(lunes, i));
+    var turnos = turnosEntre(dias[0], dias[6]);
+
+    var aviso = turnos.length ? null : avisoFueraDeRango(rangoActual());
+
+    // Agrupar por (día, sede). Los días de atención se muestran siempre,
+    // aunque estén vacíos, para que se vea que no hay nadie agendado.
+    var grupos = new Map();
+    function clave(d, s) { return d + "|" + (s || "sin"); }
+    for (i = 0; i < dias.length; i++) {
+      var dw = dowDe(dias[i]);
+      if (DIAS_CLINICA.indexOf(dw) === -1) continue;
+      grupos.set(clave(dias[i], dw === 5 ? "corrientes" : "resistencia"),
+        { dia: dias[i], sede: dw === 5 ? "corrientes" : "resistencia", turnos: [] });
+    }
+    for (i = 0; i < turnos.length; i++) {
+      var t = turnos[i], k = clave(t.clave, t.sede);
+      if (!grupos.has(k)) grupos.set(k, { dia: t.clave, sede: t.sede, turnos: [] });
+      grupos.get(k).turnos.push(t);
+    }
+
+    var lista = Array.from(grupos.values()).sort(function (a, b) {
+      if (a.dia !== b.dia) return a.dia < b.dia ? -1 : 1;
+      return (a.sede ? 0 : 1) - (b.sede ? 0 : 1);
+    });
+
+    if (!lista.length) return '<div class="card vacia">No hay días de atención en esta semana.</div>';
+
+    var hoy = hoyClave();
+    var cards = '<div class="grid-jornadas">' + lista.map(function (g) {
+      var stripe = g.sede ? "var(" + SEDES[g.sede].cssvar + ")" : "var(--alert)";
+      var n = g.turnos.length;
+
+      // Agrupar por horario: en Resistencia todos caen a las 10:30 y eso es lo normal.
+      var slots = new Map();
+      g.turnos.forEach(function (t) {
+        if (!slots.has(t.hora)) slots.set(t.hora, []);
+        slots.get(t.hora).push(t);
+      });
+      var horas = Array.from(slots.keys()).sort();
+
+      var cuerpo = n === 0
+        ? '<div class="vacia">Sin turnos agendados.</div>'
+        : horas.map(function (h) {
+            var ts = slots.get(h);
+            return '<div class="slot">' +
+              '<div class="slot-hd"><span class="slot-hora">' + esc(h) + "</span>" +
+              '<span class="slot-n">' + ts.length + (ts.length === 1 ? " paciente" : " pacientes") + "</span></div>" +
+              '<ul class="pacientes">' + ts.map(function (t, idx) {
+                return '<li class="pac"><span class="pac-i">' + (idx + 1) + "</span><div>" +
+                  nombreVisible(t) +
+                  (!t.parseoFallido && t.estudio ? '<div class="pac-meta">' + esc(t.estudio) + "</div>" : "") +
+                  (t.tel ? '<div class="pac-tel">' + esc(t.tel) + "</div>" : "") +
+                  "</div></li>";
+              }).join("") + "</ul></div>";
+          }).join("");
+
+      return '<article class="card jornada" style="--stripe:' + stripe + '">' +
+        '<div class="jornada-hd"><div>' +
+        '<div class="jornada-sede">' + puntoSede(g.sede) + esc(nombreSede(g.sede)) + (g.dia === hoy ? " · hoy" : "") + "</div>" +
+        '<div class="jornada-fecha">' + esc(txtDiaLargo(g.dia)) + "</div></div>" +
+        '<div class="jornada-n">' + n + "</div></div>" +
+        '<div class="jornada-bd">' + cuerpo + "</div></article>";
+    }).join("") + "</div>";
+
+    return (aviso ? avisoHtml(aviso) : "") + cards;
+  }
+
+  /* --- lista --- */
+
+  function vistaLista() {
+    var r = rangoActual();
+    var turnos = turnosEntre(r.desde, r.hasta).filter(function (t) {
+      if (estado.filtroSede !== "todas" && t.sede !== estado.filtroSede) return false;
+      return coincide(t, estado.q);
+    });
+
+    if (!turnos.length) {
+      var aviso = avisoFueraDeRango(r);
+      if (aviso) return avisoHtml(aviso);
+      return '<div class="card vacia">' +
+        (estado.q ? "Ningún turno coincide con «" + esc(estado.q) + "» en " + esc(txtMes(mesDe(estado.ancla))) + "."
+                  : "No hay turnos en " + esc(txtMes(mesDe(estado.ancla))) + ".") + "</div>";
+    }
+
+    return '<div class="tablewrap"><table><thead><tr>' +
+      "<th>Día</th><th>Hora</th><th>Sede</th><th>Paciente</th><th>Estudio</th><th>Teléfono</th>" +
+      "</tr></thead><tbody>" +
+      turnos.map(function (t) {
+        return "<tr>" +
+          '<td class="num">' + esc(txtDiaTabla(t.clave)) + "</td>" +
+          '<td class="num">' + esc(t.hora) + "</td>" +
+          '<td><span class="sede-tag">' + puntoSede(t.sede) + esc(nombreSede(t.sede)) + "</span></td>" +
+          "<td>" + nombreVisible(t) + "</td>" +
+          "<td>" + esc(t.parseoFallido ? "—" : (t.estudio || "—")) + "</td>" +
+          '<td class="num">' + esc(t.tel || "—") + "</td>" +
+          "</tr>";
+      }).join("") + "</tbody></table></div>";
+  }
+
+  /* --- pacientes --- */
+
+  function agruparPacientes() {
+    var porTel = new Map(), sueltos = [];
+    store.turnos.forEach(function (t) {
+      if (!t.telKey) { sueltos.push(t); return; }
+      if (!porTel.has(t.telKey)) porTel.set(t.telKey, []);
+      porTel.get(t.telKey).push(t);
+    });
+
+    var hoy = hoyClave();
+    function armar(ts, id) {
+      // El nombre canónico es el último nombre real cargado; si nunca hubo uno, queda sin nombre.
+      var nombre = null;
+      for (var i = ts.length - 1; i >= 0; i--) if (!ts[i].sinNombre && ts[i].nombre) { nombre = ts[i].nombre; break; }
+      var pasados = ts.filter(function (t) { return t.clave < hoy; });
+      var futuros = ts.filter(function (t) { return t.clave >= hoy; });
+      return {
+        id: id, nombre: nombre,
+        tel: (ts.find(function (t) { return t.tel; }) || {}).tel || null,
+        n: ts.length,
+        ultimo: pasados.length ? pasados[pasados.length - 1] : null,
+        proximo: futuros.length ? futuros[0] : null,
+        turnos: ts
+      };
+    }
+
+    var out = [];
+    porTel.forEach(function (ts, k) { out.push(armar(ts, k)); });
+    sueltos.forEach(function (t, i) { out.push(armar([t], "s" + i)); });
+
+    out.sort(function (a, b) {
+      if (!!a.proximo !== !!b.proximo) return a.proximo ? -1 : 1;
+      if (a.proximo && b.proximo) return a.proximo.instante - b.proximo.instante;
+      if (a.ultimo && b.ultimo) return b.ultimo.instante - a.ultimo.instante;
+      return 0;
+    });
+    return out;
+  }
+
+  function vistaPacientes() {
+    var q = estado.q;
+    var pacientes = agruparPacientes().filter(function (p) {
+      if (!q) return true;
+      return p.turnos.some(function (t) { return coincide(t, q); });
+    });
+
+    if (!pacientes.length) {
+      return '<div class="card vacia">' +
+        (q ? "Ningún paciente coincide con «" + esc(q) + "»." : "Todavía no llegó ningún turno.") + "</div>";
+    }
+
+    return '<div class="tablewrap"><table><thead><tr>' +
+      "<th>Paciente</th><th>Teléfono</th><th>Turnos</th><th>Último</th><th>Próximo</th>" +
+      "</tr></thead><tbody>" +
+      pacientes.map(function (p) {
+        var nom = p.nombre
+          ? '<span class="pac-nombre">' + esc(p.nombre) + "</span>"
+          : '<span class="pac-nombre vacio">Sin nombre</span>';
+        function celda(t) {
+          if (!t) return '<td class="num">—</td>';
+          return '<td class="num"><span class="sede-tag">' + puntoSede(t.sede) +
+            esc(txtDiaTabla(t.clave)) + " · " + esc(t.hora) + "</span></td>";
+        }
+        return "<tr><td>" + nom + "</td>" +
+          '<td class="num">' + esc(p.tel || "—") + "</td>" +
+          '<td class="num">' + p.n + "</td>" +
+          celda(p.ultimo) + celda(p.proximo) + "</tr>";
+      }).join("") + "</tbody></table></div>";
+  }
+
+  /* --- revisar --- */
+
+  function turnosARevisar() { return store.turnos.filter(function (t) { return t.revisar; }); }
+
+  function vistaRevisar() {
+    var r = rangoActual();
+    var todos = turnosARevisar();
+    var enRango = todos.filter(function (t) { return t.clave >= r.desde && t.clave <= r.hasta; });
+    var fuera = todos.length - enRango.length;
+
+    var pie = fuera > 0
+      ? '<div class="banners">' + bannerHtml({
+          t: fuera + (fuera === 1 ? " turno más" : " turnos más") + " para revisar en otros meses",
+          d: "Cambiá de mes con las flechas para verlos.", reint: false
+        }, true) + "</div>"
+      : "";
+
+    if (!enRango.length) {
+      return '<div class="card vacia">Ningún turno de ' + esc(txtMes(mesDe(estado.ancla))) +
+        " cae fuera de los días y horarios de atención.</div>" + pie;
+    }
+
+    return '<div class="rev">' + enRango.map(function (t) {
+      return '<article class="card rev-item"><div>' +
+        '<div class="rev-when">' + esc(txtDiaTabla(t.clave)) + " · " + esc(t.hora) + "</div>" +
+        '<div style="margin-top:5px">' + nombreVisible(t) +
+        (!t.parseoFallido && t.estudio ? '<span class="pac-meta"> — ' + esc(t.estudio) + "</span>" : "") + "</div>" +
+        '<div class="rev-motivos">' + t.motivos.map(function (m) {
+          return '<span class="motivo"><span aria-hidden="true">⚠</span>' + esc(m) + "</span>";
+        }).join("") + "</div></div>" +
+        (t.link ? '<a class="golink" href="' + esc(t.link) + '" target="_blank" rel="noopener">Abrir en Google Calendar ↗</a>' : "") +
+        "</article>";
+    }).join("") + "</div>" + pie;
+  }
+
+  /* --- métricas --- */
+
+  function tile(lbl, val, nota) {
+    return '<div class="card tile"><div class="tile-lbl">' + esc(lbl) + "</div>" +
+      '<div class="tile-val">' + val + "</div>" +
+      '<div class="tile-note">' + esc(nota) + "</div></div>";
+  }
+
+  function vistaMetricas() {
+    var r = rangoActual();
+    var turnos = turnosEntre(r.desde, r.hasta);
+    var porSede = { resistencia: 0, corrientes: 0, sin: 0 };
+    var tels = new Set();
+    turnos.forEach(function (t) {
+      porSede[t.sede || "sin"]++;
+      if (t.telKey) tels.add(t.telKey);
+    });
+
+    // Semanas del mes, de lunes a domingo.
+    var semanas = [], cur = lunesDe(r.desde), guard = 0;
+    while (cur <= r.hasta && guard++ < 8) {
+      semanas.push({ desde: cur, hasta: masDias(cur, 6),
+        etiqueta: txtDiaCorto(cur < r.desde ? r.desde : cur), res: 0, cor: 0, tot: 0 });
+      cur = masDias(cur, 7);
+    }
+    turnos.forEach(function (t) {
+      for (var i = 0; i < semanas.length; i++) {
+        if (t.clave >= semanas[i].desde && t.clave <= semanas[i].hasta) {
+          if (t.sede === "resistencia") semanas[i].res++;
+          else if (t.sede === "corrientes") semanas[i].cor++;
+          semanas[i].tot++;
+          return;
+        }
+      }
+    });
+
+    var pico = 1;
+    semanas.forEach(function (s) { pico = Math.max(pico, s.res, s.cor); });
+    var techo = Math.max(4, Math.ceil(pico / 2) * 2);
+
+    var tiles = '<div class="tiles">' +
+      tile("Turnos del mes", turnos.length, turnos.length === 0 ? "Sin actividad registrada" : "En " + txtMes(mesDe(estado.ancla))) +
+      tile("Resistencia", porSede.resistencia, SEDES.resistencia.horario) +
+      tile("Corrientes", porSede.corrientes, SEDES.corrientes.horario) +
+      tile("Pacientes distintos", tels.size, "Contados por teléfono") +
+      "</div>";
+
+    var lineas = "";
+    [0, 0.5, 1].forEach(function (f) {
+      lineas += '<div class="gridline" style="bottom:' + (f * 100) + '%"><span>' + Math.round(techo * f) + "</span></div>";
+    });
+
+    var columnas = semanas.map(function (s) {
+      function barra(cls, v, nombre) {
+        return '<div class="bar ' + (v === 0 ? "zero" : cls) + '" style="height:' + Math.max(2, (v / techo) * 100) +
+          '%" data-tip="' + esc(nombre + ": " + v + (v === 1 ? " turno" : " turnos") + " · semana del " + txtDiaCorto(s.desde)) + '"></div>';
+      }
+      return '<div class="wk"><div class="wk-tot">' + (s.tot || "") + "</div>" +
+        '<div class="bars">' + barra("res", s.res, "Resistencia") + barra("cor", s.cor, "Corrientes") + "</div>" +
+        '<div class="wk-lbl">' + esc(s.etiqueta) + "</div></div>";
+    }).join("");
+
+    var grafico = '<section class="card chartcard">' +
+      '<div class="chart-hd"><span class="chart-title">Turnos por semana</span>' +
+      '<div class="legend"><span>' + puntoSede("resistencia") + "Resistencia</span>" +
+      '<span>' + puntoSede("corrientes") + "Corrientes</span></div></div>" +
+      '<div class="plot">' + lineas + columnas + "</div></section>";
+
+    var tabla = '<div class="tablewrap"><table><thead><tr>' +
+      "<th>Semana desde</th><th>Resistencia</th><th>Corrientes</th><th>Total</th>" +
+      "</tr></thead><tbody>" + semanas.map(function (s) {
+        return "<tr><td>" + esc(txtDiaCorto(s.desde)) + '</td><td class="num">' + s.res +
+          '</td><td class="num">' + s.cor + '</td><td class="num">' + s.tot + "</td></tr>";
+      }).join("") + "</tbody></table></div>";
+
+    return tiles + grafico + tabla;
+  }
+
+  /* ============================ paneles de estado ============================ */
+
+  function panelCargando() {
+    return '<div class="card center-pane"><h2>Cargando turnos…</h2>' +
+      "<p>Leyendo la agenda del consultorio.</p></div>";
+  }
+
+  function panelVacio() {
+    return '<div class="card center-pane"><h2>No hay turnos cargados</h2>' +
+      "<p>El webhook respondió correctamente, pero sin ningún evento. Puede ser que el calendario esté vacío para el rango que trae el flujo de n8n, o que el filtro de fechas del flujo no incluya turnos.</p>" +
+      '<p><button class="btn" data-act="refrescar">Actualizar</button></p></div>';
+  }
+
+  function panelError() {
+    var e = explicar(store.error);
+    return '<div class="card center-pane"><h2>' + esc(e.t) + "</h2>" +
+      "<p>" + e.d + "</p>" + (e.d2 ? "<p>" + e.d2 + "</p>" : "") +
+      (e.muestra ? '<div class="muestra">' + esc(e.muestra) + "</div>" : "") +
+      (e.reint ? '<p style="margin-top:14px"><button class="btn primary" data-act="refrescar">Reintentar</button></p>' : "") +
+      "</div>";
+  }
+
+  /* ============================ pintar ============================ */
+
+  var pendiente = false;
+  function pintar() {
+    if (pendiente) return;
+    pendiente = true;
+    requestAnimationFrame(function () { pendiente = false; pintarYa(); });
+  }
+
+  function pintarYa() {
+    var elVista = document.getElementById("view");
+    var elStatus = document.getElementById("status");
+    var elRango = document.getElementById("rango");
+    var hayDatos = store.turnos.length > 0;
+
+    // Indicador de frescura.
+    if (store.cargando && !hayDatos) {
+      elStatus.innerHTML = '<span class="dot idle pulse"></span>Cargando turnos…';
+    } else if (store.cargando) {
+      elStatus.innerHTML = '<span class="dot idle pulse"></span>Actualizando…';
+    } else if (store.traidoEn) {
+      elStatus.innerHTML = '<span class="dot' + (store.error ? " warn" : "") + '"></span>' +
+        (store.error ? "Sin actualizar " : "Actualizado ") + esc(hace(store.traidoEn)) +
+        '<button class="linkbtn" data-act="refrescar">Actualizar</button>';
+    } else {
+      elStatus.innerHTML = '<span class="dot warn"></span>Sin datos' +
+        '<button class="linkbtn" data-act="refrescar">Reintentar</button>';
+    }
+
+    // Rango real de lo que llegó, en el pie.
+    var rd = rangoDatos();
+    elRango.textContent = rd
+      ? "Datos del " + txtDiaCorto(rd.desde) + " al " + txtDiaCorto(rd.hasta) + " · " + store.turnos.length + " turnos."
+      : "Lectura del calendario del consultorio. Esta vista no modifica turnos.";
+
+    // Estados que ocupan el cuerpo entero: solo cuando no hay nada que mostrar.
+    if (!hayDatos) {
+      pintarTabs(0);
+      document.getElementById("toolbar").innerHTML = "";
+      document.getElementById("banners").innerHTML = "";
+      if (store.error) elVista.innerHTML = panelError();
+      else if (store.estado === "vacio") elVista.innerHTML = panelVacio();
+      else elVista.innerHTML = panelCargando();
+      return;
+    }
+
+    pintarTabs(turnosARevisar().length);
+    pintarToolbar();
+    pintarBanners();
+
+    if (estado.vista === "agenda") elVista.innerHTML = vistaAgenda();
+    else if (estado.vista === "lista") elVista.innerHTML = vistaLista();
+    else if (estado.vista === "pacientes") elVista.innerHTML = vistaPacientes();
+    else if (estado.vista === "revisar") elVista.innerHTML = vistaRevisar();
+    else elVista.innerHTML = vistaMetricas();
+  }
+
+  /* ============================ interacción ============================ */
+
+  function mover(d) {
+    if (estado.vista === "agenda") estado.ancla = masDias(lunesDe(estado.ancla), d * 7);
+    else estado.ancla = masMeses(mesDe(estado.ancla), d) + "-01";
+    pintar();
+  }
+
+  document.addEventListener("click", function (e) {
+    var tab = e.target.closest("[data-vista]");
+    if (tab) { estado.vista = tab.getAttribute("data-vista"); estado.q = ""; pintar(); return; }
+
+    var sede = e.target.closest("[data-sede]");
+    if (sede) { estado.filtroSede = sede.getAttribute("data-sede"); pintar(); return; }
+
+    var act = e.target.closest("[data-act]");
+    if (!act) return;
+    var a = act.getAttribute("data-act");
+    if (a === "prev") mover(-1);
+    else if (a === "next") mover(1);
+    else if (a === "hoy") { estado.ancla = hoyClave(); pintar(); }
+    else if (a === "refrescar") traer();
+  });
+
+  document.addEventListener("input", function (e) {
+    if (e.target.id !== "q") return;
+    estado.q = e.target.value;
+    // Repinta solo el contenido para no perder el foco del buscador.
+    var elVista = document.getElementById("view");
+    if (estado.vista === "lista") elVista.innerHTML = vistaLista();
+    else if (estado.vista === "pacientes") elVista.innerHTML = vistaPacientes();
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    var t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
+    if (e.key === "ArrowLeft") { mover(-1); e.preventDefault(); }
+    else if (e.key === "ArrowRight") { mover(1); e.preventDefault(); }
+  });
+
+  var tip = document.getElementById("tip");
+  document.addEventListener("pointerover", function (e) {
+    var b = e.target.closest("[data-tip]");
+    if (!b) return;
+    tip.textContent = b.getAttribute("data-tip");
+    tip.style.opacity = "1";
+  });
+  document.addEventListener("pointermove", function (e) {
+    if (tip.style.opacity !== "1") return;
+    tip.style.left = Math.max(8, Math.min(e.clientX + 14, window.innerWidth - tip.offsetWidth - 10)) + "px";
+    tip.style.top = Math.max(8, e.clientY - tip.offsetHeight - 12) + "px";
+  });
+  document.addEventListener("pointerout", function (e) {
+    if (e.target.closest("[data-tip]")) tip.style.opacity = "0";
+  });
+
+  /* ============================ arranque ============================ */
+
+  traer();
+
+  // Refresco periódico, en pausa mientras la pestaña está oculta.
+  setInterval(function () { if (!document.hidden) traer(); }, REFRESCO_MS);
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden && store.traidoEn && Date.now() - store.traidoEn > REFRESCO_MS) traer();
+  });
+  // Mantiene vivo el "hace X minutos" sin volver a pedir datos.
+  setInterval(function () { if (!document.hidden && store.traidoEn) pintar(); }, 30000);
+})();
+</script>
+</body>
+</html>

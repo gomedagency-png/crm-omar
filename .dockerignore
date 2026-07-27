@@ -1,0 +1,17 @@
+# Lista blanca: se ignora todo y se habilita solo lo que va al contenedor.
+# Así, un archivo nuevo en la carpeta no termina publicado por accidente.
+*
+
+!index.html
+!nginx.conf
+!Dockerfile
+# La carpeta y su contenido: hace falta re-incluir las dos cosas, porque
+# excluir un directorio excluye lo que tiene adentro.
+!assets
+!assets/**
+
+# Nunca, bajo ninguna circunstancia.
+.claude/
+CLAUDE.md
+*.pdf
+skill-creator/
