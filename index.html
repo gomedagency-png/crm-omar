@@ -302,8 +302,13 @@ a.golink:hover{ color:var(--ink); }
         <button type="button" class="chip" data-form-estudio="OCT">OCT</button>
         <button type="button" class="chip" data-form-estudio="Campimetría">Campimetría</button>
         <button type="button" class="chip" data-form-estudio="Consulta">Consulta</button>
+        <button type="button" class="chip" data-form-estudio="Topografía">Topografía</button>
+        <button type="button" class="chip" data-form-estudio="Fondo de Ojos">Fondo de Ojos</button>
       </div>
     </div>
+    <label class="field">Aclaraciones / otro estudio
+      <input class="search" type="text" id="fpNotas">
+    </label>
     <div id="fpError" class="modal-error" hidden></div>
     <div class="modal-actions">
       <button type="button" class="btn" data-modal-act="cerrar">Cancelar</button>
@@ -363,7 +368,7 @@ a.golink:hover{ color:var(--ink); }
     "Resistencia (Av. 9 de Julio)": { sede: "resistencia", etiqueta: "Resistencia · Av. 9 de Julio" },
     "Resistencia (Lavalle 188)": { sede: "resistencia", etiqueta: "Resistencia · Lavalle 188" }
   };
-  var ESTUDIOS_MANUALES = ["OCT", "Campimetría", "Consulta"];
+  var ESTUDIOS_MANUALES = ["OCT", "Campimetría", "Consulta", "Topografía", "Fondo de Ojos"];
   var DURACION_TURNO_MANUAL_MIN = 10;
 
   /* ============================ fechas ============================ */
@@ -459,6 +464,11 @@ a.golink:hover{ color:var(--ink); }
     // el teléfono queda capturado como "+5493794277839.".
     var tel     = capturar(/Tel[eé]fono\s*:\s*([+\d][\d\s\-()]*)/i, desc);
     var estudio = capturar(/Estudio\s*:\s*([^.\n]+)/i, desc) || titulo || null;
+    // A diferencia de nombre/estudio/telefono, "Notas" es siempre la última
+    // sentencia de la plantilla: se puede capturar entera (con puntos y
+    // todo) sin el problema de que [^.\n]+ corte en el primer punto.
+    var notas = capturar(/Notas\s*:\s*([^\n]+)/i, desc);
+    if (notas) notas = notas.replace(/\.\s*$/, "");
 
     var t = {
       // El webhook puede no traer id; se arma uno estable con lo que sí viene.
@@ -466,6 +476,7 @@ a.golink:hover{ color:var(--ink); }
       nombre: nombre,
       sinNombre: esPlaceholder(nombre),
       estudio: estudio,
+      notas: notas,
       tel: tel,
       telKey: claveTelefono(tel),
       link: ev.htmlLink || null,
@@ -936,7 +947,7 @@ a.golink:hover{ color:var(--ink); }
               '<ul class="pacientes">' + ts.map(function (t, idx) {
                 return '<li class="pac"><span class="pac-i">' + (idx + 1) + "</span><div>" +
                   nombreVisible(t) +
-                  (!t.parseoFallido && t.estudio ? '<div class="pac-meta">' + esc(t.estudio) + "</div>" : "") +
+                  (!t.parseoFallido && t.estudio ? '<div class="pac-meta">' + esc(t.estudio) + (t.notas ? " · " + esc(t.notas) : "") + "</div>" : "") +
                   (t.sedeManual ? '<div class="pac-meta">' + esc(t.sedeEtiqueta) + "</div>" : "") +
                   (t.tel ? '<div class="pac-tel">' + esc(t.tel) + "</div>" : "") +
                   "</div></li>";
@@ -1044,7 +1055,7 @@ a.golink:hover{ color:var(--ink); }
           '<td class="num">' + esc(t.hora) + "</td>" +
           '<td><span class="sede-tag">' + puntoSede(t.sede) + esc(t.sedeEtiqueta || nombreSede(t.sede)) + "</span></td>" +
           "<td>" + nombreVisible(t) + "</td>" +
-          "<td>" + esc(t.parseoFallido ? "—" : (t.estudio || "—")) + "</td>" +
+          "<td>" + esc(t.parseoFallido ? "—" : ((t.estudio || "—") + (t.notas ? " · " + t.notas : ""))) + "</td>" +
           '<td class="num">' + esc(t.tel || "—") + "</td>" +
           "</tr>";
       }).join("") + "</tbody></table></div>";
@@ -1076,7 +1087,7 @@ a.golink:hover{ color:var(--ink); }
       return '<article class="card rev-item"><div>' +
         '<div class="rev-when">' + esc(txtDiaTabla(t.clave)) + " · " + esc(t.hora) + "</div>" +
         '<div style="margin-top:5px">' + nombreVisible(t) +
-        (!t.parseoFallido && t.estudio ? '<span class="pac-meta"> — ' + esc(t.estudio) + "</span>" : "") + "</div>" +
+        (!t.parseoFallido && t.estudio ? '<span class="pac-meta"> — ' + esc(t.estudio) + (t.notas ? " · " + esc(t.notas) : "") + "</span>" : "") + "</div>" +
         '<div class="rev-motivos">' + t.motivos.map(function (m) {
           return '<span class="motivo"><span aria-hidden="true">⚠</span>' + esc(m) + "</span>";
         }).join("") + "</div></div>" +
@@ -1234,6 +1245,7 @@ a.golink:hover{ color:var(--ink); }
     document.getElementById("fpTelefono").value = "";
     document.getElementById("fpFecha").value = estado.ancla || hoyClave();
     document.getElementById("fpHora").value = "";
+    document.getElementById("fpNotas").value = "";
     Array.prototype.forEach.call(document.querySelectorAll("#fpSedeChips .chip, #fpEstudioChips .chip"), function (c) {
       c.setAttribute("aria-pressed", "false");
     });
@@ -1258,6 +1270,7 @@ a.golink:hover{ color:var(--ink); }
     var hora = document.getElementById("fpHora").value;
     var sede = chipElegido("fpSedeChips");
     var estudio = chipElegido("fpEstudioChips");
+    var notas = document.getElementById("fpNotas").value.trim();
 
     var errores = [];
     if (!nombre) errores.push("Falta el nombre completo.");
@@ -1265,10 +1278,10 @@ a.golink:hover{ color:var(--ink); }
     if (!fecha) errores.push("Falta la fecha.");
     if (!hora) errores.push("Falta la hora.");
     if (!sede) errores.push("Elegí una sede.");
-    if (!estudio) errores.push("Elegí un estudio.");
+    if (!estudio && !notas) errores.push("Elegí un estudio o escribí una aclaración.");
 
     return {
-      valores: { nombre: nombre, telefono: telefono, fecha: fecha, hora: hora, sede: sede, estudio: estudio },
+      valores: { nombre: nombre, telefono: telefono, fecha: fecha, hora: hora, sede: sede, estudio: estudio, notas: notas },
       errores: errores
     };
   }
