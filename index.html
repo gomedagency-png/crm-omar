@@ -219,6 +219,20 @@ a.golink:hover{ color:var(--ink); }
 .center-pane code{ font-family:var(--f-mono); font-size:12.5px; background:var(--paper-sunken);
   padding:1px 5px; border-radius:4px; border:1px solid var(--line); }
 
+/* modal: agregar paciente */
+.modal-overlay{ position:fixed; inset:0; z-index:70; display:grid; place-items:center;
+  background:rgba(0,0,0,.4); padding:20px; }
+.modal-overlay[hidden]{ display:none; }
+.modal-card{ width:100%; max-width:420px; padding:22px 24px 24px; display:flex;
+  flex-direction:column; gap:14px; max-height:90vh; overflow-y:auto; }
+.modal-card h2{ font-family:var(--f-display); font-size:20px; }
+.field{ display:flex; flex-direction:column; gap:6px; font-size:13px; color:var(--ink-muted); }
+.field .search{ width:100%; }
+.modal-error{ border:1px solid var(--alert-line); background:var(--alert-bg); color:var(--alert);
+  border-radius:var(--radius-sm); padding:10px 12px; font-size:13px; }
+.modal-error[hidden]{ display:none; }
+.modal-actions{ display:flex; justify-content:flex-end; gap:8px; margin-top:4px; }
+
 @media (max-width:560px){
   h1{ font-size:21px; }
   .period{ font-size:16px; }
@@ -261,6 +275,43 @@ a.golink:hover{ color:var(--ink); }
 
 <div id="tip" role="tooltip"></div>
 
+<div id="modalPaciente" class="modal-overlay" hidden>
+  <form id="formPaciente" class="card modal-card" novalidate>
+    <h2>Agregar paciente</h2>
+    <label class="field">Nombre completo
+      <input class="search" type="text" id="fpNombre" required>
+    </label>
+    <label class="field">Teléfono
+      <input class="search" type="text" id="fpTelefono" required>
+    </label>
+    <label class="field">Fecha
+      <input class="search" type="date" id="fpFecha" required>
+    </label>
+    <label class="field">Hora
+      <input class="search" type="time" id="fpHora" required>
+    </label>
+    <div class="field">Sede
+      <div class="chips" id="fpSedeChips">
+        <button type="button" class="chip" data-form-sede="Corrientes">Corrientes</button>
+        <button type="button" class="chip" data-form-sede="Resistencia (Av. 9 de Julio)">Resistencia (Av. 9 de Julio)</button>
+        <button type="button" class="chip" data-form-sede="Resistencia (Lavalle 188)">Resistencia (Lavalle 188)</button>
+      </div>
+    </div>
+    <div class="field">Estudio
+      <div class="chips" id="fpEstudioChips">
+        <button type="button" class="chip" data-form-estudio="OCT">OCT</button>
+        <button type="button" class="chip" data-form-estudio="Campimetría">Campimetría</button>
+        <button type="button" class="chip" data-form-estudio="Consulta">Consulta</button>
+      </div>
+    </div>
+    <div id="fpError" class="modal-error" hidden></div>
+    <div class="modal-actions">
+      <button type="button" class="btn" data-modal-act="cerrar">Cancelar</button>
+      <button type="submit" class="btn primary" id="fpSubmit">Guardar turno</button>
+    </div>
+  </form>
+</div>
+
 <script>
 (function () {
   "use strict";
@@ -281,6 +332,14 @@ a.golink:hover{ color:var(--ink); }
   var REFRESCO_MS = 60000;
   var TIMEOUT_MS = 20000;
 
+  // Webhook de ALTA (POST): crea el evento real en el mismo Google Calendar,
+  // separado del webhook de lectura de arriba. Mismo criterio relativo/absoluto.
+  var WEBHOOK_CREAR_RUTA = "/webhook/6de92b2e-dca8-495e-9543-c384d72c8dec";
+  var WEBHOOK_CREAR_ABSOLUTO = "https://gomedic-prueba-gomedic-n8n.6afcq3.easypanel.host" + WEBHOOK_CREAR_RUTA;
+  var WEBHOOK_CREAR_URL = (location.protocol === "http:" || location.protocol === "https:")
+    ? WEBHOOK_CREAR_RUTA
+    : WEBHOOK_CREAR_ABSOLUTO;
+
   /* ============================ constantes ============================ */
 
   var TZ = "America/Argentina/Buenos_Aires";
@@ -294,6 +353,18 @@ a.golink:hover{ color:var(--ink); }
   // Nombres que el consultorio usa como marcador de "todavía sin cargar".
   // No son un error: se muestran tal cual, en gris.
   var PLACEHOLDERS = ["pendiente", "no informado", "no informa", "sin nombre", "s/d", "sd", "-", "--", "x"];
+
+  // Turnos cargados a mano desde el modal "+ Agregar paciente": n8n guarda la
+  // sede elegida tal cual en el campo location del evento de Calendar (no en
+  // la description). Acá se mapea ese string exacto al id de SEDES existente
+  // (para reusar color/filtro) y a una etiqueta más específica para mostrar.
+  var SEDES_MANUALES = {
+    "Corrientes": { sede: "corrientes", etiqueta: "Corrientes" },
+    "Resistencia (Av. 9 de Julio)": { sede: "resistencia", etiqueta: "Resistencia · Av. 9 de Julio" },
+    "Resistencia (Lavalle 188)": { sede: "resistencia", etiqueta: "Resistencia · Lavalle 188" }
+  };
+  var ESTUDIOS_MANUALES = ["OCT", "Campimetría", "Consulta"];
+  var DURACION_TURNO_MANUAL_MIN = 10;
 
   /* ============================ fechas ============================ */
 
@@ -413,6 +484,8 @@ a.golink:hover{ color:var(--ink); }
       t.hora = "todo el día";
       t.instante = t.clave ? claveAUtc(t.clave) : 0;
       t.sede = null;
+      t.sedeManual = null;
+      t.sedeEtiqueta = null;
       t.motivos.push("Sin horario — quedó como evento de día completo");
       t.revisar = true;
       return t.clave ? t : null;
@@ -429,7 +502,21 @@ a.golink:hover{ color:var(--ink); }
     t.hora = p.hora;
     t.sede = sedeDe(p.dow, p.minutos);
 
-    if (t.sede === null) t.motivos.push("Fuera de los días y horarios de atención");
+    // Turno cargado a mano desde el CRM: ev.location trae uno de los tres
+    // strings fijos elegidos en el modal. Si matchea, manda por sobre la
+    // clasificación automática por día/horario, y no se marca "fuera de
+    // horario" — un turno cargado a mano casi nunca cae en esas ventanas y
+    // no es un error a revisar.
+    var manual = SEDES_MANUALES[(ev.location || "").trim()];
+    if (manual) {
+      t.sede = manual.sede;
+      t.sedeManual = (ev.location || "").trim();
+      t.sedeEtiqueta = manual.etiqueta;
+    } else {
+      t.sedeManual = null;
+      t.sedeEtiqueta = null;
+      if (t.sede === null) t.motivos.push("Fuera de los días y horarios de atención");
+    }
     // El horario que se muestra siempre es el instante real convertido a hora de
     // Argentina; esto marca que el evento quedó declarado en otra zona horaria.
     if (t.tzBruto && t.tzBruto !== TZ) t.motivos.push("Zona horaria mal declarada: " + t.tzBruto);
@@ -774,6 +861,10 @@ a.golink:hover{ color:var(--ink); }
 
     html += '<span class="spacer"></span>';
 
+    if (estado.vista === "agenda") {
+      html += '<button class="btn primary" data-act="abrir-modal-paciente">+ Agregar paciente</button>';
+    }
+
     if (estado.vista === "lista") {
       html += '<input class="search" id="q" type="search" placeholder="Buscar por nombre, teléfono o estudio" value="' + esc(estado.q) + '">';
     }
@@ -846,6 +937,7 @@ a.golink:hover{ color:var(--ink); }
                 return '<li class="pac"><span class="pac-i">' + (idx + 1) + "</span><div>" +
                   nombreVisible(t) +
                   (!t.parseoFallido && t.estudio ? '<div class="pac-meta">' + esc(t.estudio) + "</div>" : "") +
+                  (t.sedeManual ? '<div class="pac-meta">' + esc(t.sedeEtiqueta) + "</div>" : "") +
                   (t.tel ? '<div class="pac-tel">' + esc(t.tel) + "</div>" : "") +
                   "</div></li>";
               }).join("") + "</ul></div>";
@@ -950,7 +1042,7 @@ a.golink:hover{ color:var(--ink); }
         return "<tr>" +
           '<td class="num">' + esc(txtDiaTabla(t.clave)) + "</td>" +
           '<td class="num">' + esc(t.hora) + "</td>" +
-          '<td><span class="sede-tag">' + puntoSede(t.sede) + esc(nombreSede(t.sede)) + "</span></td>" +
+          '<td><span class="sede-tag">' + puntoSede(t.sede) + esc(t.sedeEtiqueta || nombreSede(t.sede)) + "</span></td>" +
           "<td>" + nombreVisible(t) + "</td>" +
           "<td>" + esc(t.parseoFallido ? "—" : (t.estudio || "—")) + "</td>" +
           '<td class="num">' + esc(t.tel || "—") + "</td>" +
@@ -1123,6 +1215,144 @@ a.golink:hover{ color:var(--ink); }
     else elVista.innerHTML = vistaMetricas();
   }
 
+  /* ============================ turno manual ============================ */
+
+  function seleccionarChip(btn, contenedorId) {
+    var cont = document.getElementById(contenedorId);
+    Array.prototype.forEach.call(cont.querySelectorAll(".chip"), function (c) {
+      c.setAttribute("aria-pressed", c === btn ? "true" : "false");
+    });
+  }
+
+  function chipElegido(contenedorId) {
+    var el = document.querySelector("#" + contenedorId + ' [aria-pressed="true"]');
+    return el ? el.getAttribute("data-form-sede") || el.getAttribute("data-form-estudio") : null;
+  }
+
+  function abrirModalPaciente() {
+    document.getElementById("fpNombre").value = "";
+    document.getElementById("fpTelefono").value = "";
+    document.getElementById("fpFecha").value = estado.ancla || hoyClave();
+    document.getElementById("fpHora").value = "";
+    Array.prototype.forEach.call(document.querySelectorAll("#fpSedeChips .chip, #fpEstudioChips .chip"), function (c) {
+      c.setAttribute("aria-pressed", "false");
+    });
+    var err = document.getElementById("fpError");
+    err.hidden = true;
+    err.textContent = "";
+    var submit = document.getElementById("fpSubmit");
+    submit.disabled = false;
+    submit.textContent = "Guardar turno";
+    document.getElementById("modalPaciente").hidden = false;
+    document.getElementById("fpNombre").focus();
+  }
+
+  function cerrarModalPaciente() {
+    document.getElementById("modalPaciente").hidden = true;
+  }
+
+  function leerFormPaciente() {
+    var nombre = document.getElementById("fpNombre").value.trim();
+    var telefono = document.getElementById("fpTelefono").value.trim();
+    var fecha = document.getElementById("fpFecha").value;
+    var hora = document.getElementById("fpHora").value;
+    var sede = chipElegido("fpSedeChips");
+    var estudio = chipElegido("fpEstudioChips");
+
+    var errores = [];
+    if (!nombre) errores.push("Falta el nombre completo.");
+    if (!telefono) errores.push("Falta el teléfono.");
+    if (!fecha) errores.push("Falta la fecha.");
+    if (!hora) errores.push("Falta la hora.");
+    if (!sede) errores.push("Elegí una sede.");
+    if (!estudio) errores.push("Elegí un estudio.");
+
+    return {
+      valores: { nombre: nombre, telefono: telefono, fecha: fecha, hora: hora, sede: sede, estudio: estudio },
+      errores: errores
+    };
+  }
+
+  function crearTurnoManual(payload) {
+    var opciones = {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify(payload)
+    };
+    try {
+      if (typeof AbortSignal !== "undefined" && AbortSignal.timeout) opciones.signal = AbortSignal.timeout(TIMEOUT_MS);
+    } catch (_) { /* navegador viejo: sigue sin timeout */ }
+
+    return fetch(WEBHOOK_CREAR_URL, opciones)
+      .then(function (res) {
+        if (!res.ok) { var e = new Error("http"); e.tipo = "http"; e.status = res.status; throw e; }
+        return res.text();
+      })
+      .then(function (txt) {
+        try { return txt ? JSON.parse(txt) : {}; }
+        catch (_) {
+          var e = new Error("json"); e.tipo = "json"; e.muestra = txt.slice(0, 200) || "(respuesta vacía)";
+          throw e;
+        }
+      })
+      .catch(function (err) {
+        if (!err.tipo) err.tipo = (err && (err.name === "TimeoutError" || err.name === "AbortError")) ? "timeout" : "red";
+        throw err;
+      });
+  }
+
+  function explicarErrorCrear(err) {
+    var s = err && err.status;
+    switch (err && err.tipo) {
+      case "http":
+        if (s === 400) return "Faltan datos del turno — revisá que todos los campos estén completos.";
+        if (s === 404) return "El webhook de alta no existe. Revisá la URL o que el workflow esté activo en n8n.";
+        if (s >= 500) return "n8n falló al crear el turno. Revisá la ejecución del workflow de alta.";
+        return "El webhook de alta respondió con error " + s + ".";
+      case "timeout":
+        return "El pedido tardó demasiado. Probá guardar de nuevo.";
+      case "json":
+        return "El webhook de alta no devolvió una respuesta válida.";
+      case "red":
+        return "No se pudo contactar al webhook de alta. Revisá la conexión.";
+      default:
+        return "No se pudo crear el turno. Probá de nuevo.";
+    }
+  }
+
+  var enviandoPaciente = false;
+  function manejarSubmitPaciente() {
+    if (enviandoPaciente) return;
+    var f = leerFormPaciente();
+    var err = document.getElementById("fpError");
+    if (f.errores.length) {
+      err.textContent = f.errores[0];
+      err.hidden = false;
+      return;
+    }
+
+    enviandoPaciente = true;
+    err.hidden = true;
+    var submit = document.getElementById("fpSubmit");
+    submit.disabled = true;
+    submit.textContent = "Guardando…";
+
+    crearTurnoManual(f.valores)
+      .then(function () {
+        cerrarModalPaciente();
+        traer();
+      })
+      .catch(function (e) {
+        err.textContent = explicarErrorCrear(e);
+        err.hidden = false;
+      })
+      .then(function () {
+        enviandoPaciente = false;
+        submit.disabled = false;
+        submit.textContent = "Guardar turno";
+      });
+  }
+
   /* ============================ interacción ============================ */
 
   function mover(d) {
@@ -1132,6 +1362,14 @@ a.golink:hover{ color:var(--ink); }
   }
 
   document.addEventListener("click", function (e) {
+    if (e.target.id === "modalPaciente") { cerrarModalPaciente(); return; } // click en el fondo
+    var cerrarM = e.target.closest('[data-modal-act="cerrar"]');
+    if (cerrarM) { cerrarModalPaciente(); return; }
+    var fs = e.target.closest("[data-form-sede]");
+    if (fs) { seleccionarChip(fs, "fpSedeChips"); return; }
+    var fe = e.target.closest("[data-form-estudio]");
+    if (fe) { seleccionarChip(fe, "fpEstudioChips"); return; }
+
     var tab = e.target.closest("[data-vista]");
     if (tab) { estado.vista = tab.getAttribute("data-vista"); estado.q = ""; pintar(); return; }
 
@@ -1159,6 +1397,13 @@ a.golink:hover{ color:var(--ink); }
     else if (a === "next") mover(1);
     else if (a === "hoy") { estado.ancla = hoyClave(); pintar(); }
     else if (a === "refrescar") traer();
+    else if (a === "abrir-modal-paciente") abrirModalPaciente();
+  });
+
+  document.addEventListener("submit", function (e) {
+    if (!e.target.closest("#formPaciente")) return;
+    e.preventDefault();
+    manejarSubmitPaciente();
   });
 
   document.addEventListener("input", function (e) {
@@ -1170,6 +1415,7 @@ a.golink:hover{ color:var(--ink); }
   });
 
   document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") { cerrarModalPaciente(); return; }
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     var t = e.target;
     if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
