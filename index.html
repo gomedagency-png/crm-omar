@@ -1228,16 +1228,27 @@ a.golink:hover{ color:var(--ink); }
 
   /* ============================ turno manual ============================ */
 
-  function seleccionarChip(btn, contenedorId) {
+  function seleccionarChipUnico(btn, contenedorId) {
     var cont = document.getElementById(contenedorId);
     Array.prototype.forEach.call(cont.querySelectorAll(".chip"), function (c) {
       c.setAttribute("aria-pressed", c === btn ? "true" : "false");
     });
   }
 
+  // Los chips de estudio son multi-selección: cada click alterna solo ese
+  // chip, a diferencia de sede (única sede posible por turno).
+  function alternarChipMultiple(btn) {
+    btn.setAttribute("aria-pressed", btn.getAttribute("aria-pressed") === "true" ? "false" : "true");
+  }
+
   function chipElegido(contenedorId) {
     var el = document.querySelector("#" + contenedorId + ' [aria-pressed="true"]');
-    return el ? el.getAttribute("data-form-sede") || el.getAttribute("data-form-estudio") : null;
+    return el ? el.getAttribute("data-form-sede") : null;
+  }
+
+  function chipsElegidos(contenedorId) {
+    var els = document.querySelectorAll("#" + contenedorId + ' [aria-pressed="true"]');
+    return Array.prototype.map.call(els, function (el) { return el.getAttribute("data-form-estudio"); });
   }
 
   function abrirModalPaciente() {
@@ -1269,8 +1280,13 @@ a.golink:hover{ color:var(--ink); }
     var fecha = document.getElementById("fpFecha").value;
     var hora = document.getElementById("fpHora").value;
     var sede = chipElegido("fpSedeChips");
-    var estudio = chipElegido("fpEstudioChips");
+    var estudios = chipsElegidos("fpEstudioChips");
+    var estudio = estudios.join(" + ") || null;
     var notas = document.getElementById("fpNotas").value.trim();
+    // El summary del evento en Calendar: estudios elegidos + aclaraciones,
+    // listo para que el nodo Create Event de n8n lo use directo sin tener
+    // que armar la concatenación ahí.
+    var resumen = [estudio, notas].filter(Boolean).join(" · ") || null;
 
     var errores = [];
     if (!nombre) errores.push("Falta el nombre completo.");
@@ -1278,10 +1294,13 @@ a.golink:hover{ color:var(--ink); }
     if (!fecha) errores.push("Falta la fecha.");
     if (!hora) errores.push("Falta la hora.");
     if (!sede) errores.push("Elegí una sede.");
-    if (!estudio && !notas) errores.push("Elegí un estudio o escribí una aclaración.");
+    if (!estudio && !notas) errores.push("Elegí al menos un estudio o escribí una aclaración.");
 
     return {
-      valores: { nombre: nombre, telefono: telefono, fecha: fecha, hora: hora, sede: sede, estudio: estudio, notas: notas },
+      valores: {
+        nombre: nombre, telefono: telefono, fecha: fecha, hora: hora, sede: sede,
+        estudio: estudio, estudios: estudios, notas: notas, resumen: resumen
+      },
       errores: errores
     };
   }
@@ -1379,9 +1398,9 @@ a.golink:hover{ color:var(--ink); }
     var cerrarM = e.target.closest('[data-modal-act="cerrar"]');
     if (cerrarM) { cerrarModalPaciente(); return; }
     var fs = e.target.closest("[data-form-sede]");
-    if (fs) { seleccionarChip(fs, "fpSedeChips"); return; }
+    if (fs) { seleccionarChipUnico(fs, "fpSedeChips"); return; }
     var fe = e.target.closest("[data-form-estudio]");
-    if (fe) { seleccionarChip(fe, "fpEstudioChips"); return; }
+    if (fe) { alternarChipMultiple(fe); return; }
 
     var tab = e.target.closest("[data-vista]");
     if (tab) { estado.vista = tab.getAttribute("data-vista"); estado.q = ""; pintar(); return; }
